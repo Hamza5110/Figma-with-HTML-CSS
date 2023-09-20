@@ -1,0 +1,149 @@
+const box2 = document.querySelector(".box2");
+
+const product_cards = document.querySelector(".product_cards");
+
+const firstCardWidth = product_cards.querySelector(".product_1").offsetWidth;
+
+const arrowBtns = document.querySelectorAll(".box2 #left, #right");
+
+const product_cardsChildrens = [...product_cards.children];
+
+let isDragging = false,
+  isAutoPlay = true,
+  startX,
+  startScrollLeft,
+  timeoutId;
+
+// Get the number of cards that can fit in the product_cards at once
+let cardPerView = Math.round(product_cards.offsetWidth / firstCardWidth);
+
+// Insert copies of the last few cards to beginning of product_cards for infinite scrolling
+product_cardsChildrens
+  .slice(-cardPerView)
+  .reverse()
+  .forEach((card) => {
+    product_cards.insertAdjacentHTML("afterbegin", card.outerHTML);
+  });
+
+// Insert copies of the first few cards to end of product_cards for infinite scrolling
+product_cardsChildrens.slice(0, cardPerView).forEach((product_1) => {
+  product_cards.insertAdjacentHTML("beforeend", product_1.outerHTML);
+});
+
+// Scroll the product_cards at appropriate postition to hide first few duplicate cards on Firefox
+product_cards.classList.add("no-transition");
+product_cards.scrollLeft = product_cards.offsetWidth;
+product_cards.classList.remove("no-transition");
+
+// Add event listeners for the arrow buttons to scroll the product_cards left and right
+arrowBtns.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    // console.log(btn.id);
+    product_cards.scrollLeft +=
+      btn.id === "left" ? -firstCardWidth : firstCardWidth;
+  });
+});
+
+const dragStart = (e) => {
+  isDragging = true;
+  product_cards.classList.add("dragging");
+  // Records the initial cursor and scroll position of the product_cards
+  startX = e.pageX;
+  startScrollLeft = product_cards.scrollLeft;
+};
+
+const dragging = (e) => {
+  if (!isDragging) return; // if isDragging is false return from here
+  // Updates the scroll position of the product_cards based on the cursor movement
+  product_cards.scrollLeft = startScrollLeft - (e.pageX - startX);
+};
+
+const dragStop = () => {
+  isDragging = false;
+  product_cards.classList.remove("dragging");
+};
+
+const infiniteScroll = () => {
+  // If the product_cards is at the beginning, scroll to the end
+  if (product_cards.scrollLeft === 0) {
+    product_cards.classList.add("no-transition");
+    product_cards.scrollLeft =
+      product_cards.scrollWidth - 2 * product_cards.offsetWidth;
+    product_cards.classList.remove("no-transition");
+  }
+  // If the product_cards is at the end, scroll to the beginning
+  else if (
+    Math.ceil(product_cards.scrollLeft) ===
+    product_cards.scrollWidth - product_cards.offsetWidth
+  ) {
+    product_cards.classList.add("no-transition");
+    product_cards.scrollLeft = product_cards.offsetWidth;
+    product_cards.classList.remove("no-transition");
+  }
+
+  // Clear existing timeout & start autoplay if mouse is not hovering over product_cards
+  clearTimeout(timeoutId);
+  if (!box2.matches(":hover")) autoPlay();
+};
+
+const autoPlay = () => {
+  if (window.innerWidth < 800 || !isAutoPlay) return; // Return if window is smaller than 800 or isAutoPlay is false
+  // Autoplay the product_cards after every 2500 ms
+  timeoutId = setTimeout(
+    () => (product_cards.scrollLeft += firstCardWidth),
+    2500
+  );
+};
+autoPlay();
+
+product_cards.addEventListener("mousedown", dragStart);
+product_cards.addEventListener("mousemove", dragging);
+document.addEventListener("mouseup", dragStop);
+product_cards.addEventListener("scroll", infiniteScroll);
+box2.addEventListener("mouseenter", () => clearTimeout(timeoutId));
+box2.addEventListener("mouseleave", autoPlay);
+
+
+
+
+// JavaScript code to handle individual star ratings for multiple products
+
+const starContainers = document.querySelectorAll('.stars');
+
+starContainers.forEach((container) => {
+//   const stars = container.querySelectorAll('.fa-star');
+  const stars = container.querySelectorAll('.stars i');
+
+  stars.forEach((star) => {
+    star.addEventListener('mouseover', function () {
+      const rating = this.getAttribute('data-rating');
+      highlightStars(container, stars, rating);
+    });
+
+    star.addEventListener('mouseleave', function () {
+      const containerRating = container.getAttribute('data-rating');
+      highlightStars(container, stars, containerRating);
+    });
+
+    star.addEventListener('click', function () {
+      const rating = this.getAttribute('data-rating');
+      container.setAttribute('data-rating', rating);
+
+      // You can send the rating to the server here if needed
+
+      highlightStars(container, stars, rating);
+    });
+  });
+});
+
+function highlightStars(container, stars, rating) {
+  stars.forEach((star) => {
+    const starRating = star.getAttribute('data-rating');
+    if (starRating <= rating) {
+      star.classList.add('highlighted');
+    } else {
+      star.classList.remove('highlighted');
+    }
+  });
+}
+
